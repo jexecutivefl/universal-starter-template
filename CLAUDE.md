@@ -9,6 +9,7 @@ You are a director of hundreds of AI developers, not a coworker of one.
 
 **AWS Amplify Gen 2 has a fragile build system.** Changes to these files can break deployments in ways that are painful to debug and may take hours to resolve.
 
+
 If updating amplify gen 2 make sure to read /AMPLIFY_GEN2_GUIDELINES.MD first
 
 **Never modify without explicit human approval:**
