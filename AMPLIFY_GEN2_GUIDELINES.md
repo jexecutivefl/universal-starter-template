@@ -5,8 +5,10 @@ If updating amplify gen 2 make sure to read /AMPLIFY_GEN2_GUIDELINES.MD first
 ## Schema Definition Rules (amplify/data/resource.ts)
 
 ### Enums
+
 - **DO NOT chain `.required()` on enums** - enums are required by default
 - Use `.optional()` only if the field should be nullable
+
 ```typescript
 // ❌ WRONG - will cause TypeScript error
 priority: a.enum(['low', 'medium', 'high']).required(),
@@ -19,28 +21,35 @@ priority: a.enum(['low', 'medium', 'high']).optional(),
 ```
 
 ### Reserved Names
+
 These names are reserved in GraphQL and **cannot be used as model names**:
+
 - `Subscription` (use `PlanSubscription`, `UserSubscription`, etc.)
 - `Query`
 - `Mutation`
 - `Type`
 
 ### GraphQL Naming Rules
+
 All identifiers (model names, field names, enum values) must:
-- Start with a letter (a-z, A-Z) or underscore (_)
+
+- Start with a letter (a-z, A-Z) or underscore (\_)
 - **Cannot start with a number**
+
 ```typescript
 // ❌ WRONG
-a.enum(['1_pending', '2_approved'])
-field1stAttempt: a.string()
+a.enum(["1_pending", "2_approved"]);
+field1stAttempt: a.string();
 
 // ✅ CORRECT
-a.enum(['pending', 'approved'])
-firstAttempt: a.string()
+a.enum(["pending", "approved"]);
+firstAttempt: a.string();
 ```
 
 ### Keep Schema and Frontend Types in Sync
+
 When adding enum values to the schema, ensure all frontend type definitions match:
+
 ```typescript
 // If schema has:
 status: a.enum(['ACTIVE', 'SOLD', 'REMOVED', 'EXPIRED', 'PENDING']),
@@ -54,57 +63,62 @@ type ListingStatus = 'ACTIVE' | 'SOLD' | 'REMOVED' | 'EXPIRED' | 'PENDING';
 ## TypeScript Type Compatibility
 
 ### Nullable vs Undefined
+
 Amplify Gen 2 returns `Nullable<T> | undefined` but many interfaces expect `T | null`.
 
 **Always convert undefined to null when mapping Amplify data:**
+
 ```typescript
 // ❌ WRONG - may be undefined
-billingNotes: claim.billingNotes,
+description: post.description,
 
 // ✅ CORRECT - converts undefined to null
-billingNotes: claim.billingNotes ?? null,
+description: post.description ?? null,
 ```
 
 **Consider creating a utility helper:**
+
 ```typescript
 // utils/nullify.ts
 export const nullify = <T>(value: T | undefined): T | null => value ?? null;
 
 // Usage:
-billingNotes: nullify(claim.billingNotes),
-doctorClientId: nullify(item.doctorClientId),
+description: nullify(post.description),
+userId: nullify(item.userId),
 ```
 
 ### Enum Type Casting
+
 When form state is generic `string` but schema expects specific enum values:
+
 ```typescript
 // ❌ WRONG - string not assignable to enum type
-resolution: data.resolution,
+status: data.status,
 
 // ✅ CORRECT - cast to the expected type
-resolution: data.resolution as "written_off" | "paid_on_appeal" | "upheld" | null,
+status: data.status as "pending" | "approved" | "rejected" | null,
 
 // ✅ BETTER - define reusable type
-type ResolutionType = "written_off" | "paid_on_appeal" | "paid_on_resubmit" | "patient_responsibility" | "upheld" | null;
-resolution: data.resolution as ResolutionType,
+type OrderStatus = "pending" | "processing" | "shipped" | "delivered" | "cancelled" | null;
+status: data.status as OrderStatus,
 ```
 
 ### Null Checks in Callbacks
+
 TypeScript control flow analysis doesn't carry into callbacks:
+
 ```typescript
-// ❌ WRONG - TypeScript doesn't know maxMileage is non-null inside callback
-if (profile.maxMileage) {
-  listings = listings.filter((listing) =>
-    listing.mileage <= profile.maxMileage  // Error: possibly null
+// ❌ WRONG - TypeScript doesn't know maxPrice is non-null inside callback
+if (filters.maxPrice) {
+  products = products.filter(
+    (product) => product.price <= filters.maxPrice // Error: possibly null
   );
 }
 
 // ✅ CORRECT - capture value before callback
-if (profile.maxMileage) {
-  const maxMileage = profile.maxMileage;
-  listings = listings.filter((listing) =>
-    listing.mileage <= maxMileage
-  );
+if (filters.maxPrice) {
+  const maxPrice = filters.maxPrice;
+  products = products.filter((product) => product.price <= maxPrice);
 }
 ```
 
@@ -120,43 +134,47 @@ Before pushing changes that modify the Amplify schema or data layer:
 
 ### Common Build Errors Quick Reference
 
-| Error Pattern | Cause | Fix |
-|--------------|-------|-----|
-| `Property 'required' does not exist on type 'EnumType<...>'` | Chaining `.required()` on enum | Remove `.required()` from enum |
-| `'X' is a reserved type name` | Using reserved GraphQL name | Rename model (e.g., `Subscription` → `PlanSubscription`) |
-| `Expected Name, found Int "1"` | Identifier starts with number | Rename to start with letter |
-| `Type 'Nullable<string> \| undefined' is not assignable to type 'string \| null'` | Amplify nullable mismatch | Add `?? null` to convert undefined |
-| `Type 'string' is not assignable to type 'enum...'` | Generic string vs enum type | Cast to specific enum type |
-| `'X' is possibly 'null'` inside callback | Null check doesn't flow into callbacks | Store value in variable before callback |
-| `Property 'X' does not exist on type` | Removed model still referenced | Update all references to removed/renamed models |
+| Error Pattern                                                                     | Cause                                  | Fix                                                      |
+| --------------------------------------------------------------------------------- | -------------------------------------- | -------------------------------------------------------- |
+| `Property 'required' does not exist on type 'EnumType<...>'`                      | Chaining `.required()` on enum         | Remove `.required()` from enum                           |
+| `'X' is a reserved type name`                                                     | Using reserved GraphQL name            | Rename model (e.g., `Subscription` → `PlanSubscription`) |
+| `Expected Name, found Int "1"`                                                    | Identifier starts with number          | Rename to start with letter                              |
+| `Type 'Nullable<string> \| undefined' is not assignable to type 'string \| null'` | Amplify nullable mismatch              | Add `?? null` to convert undefined                       |
+| `Type 'string' is not assignable to type 'enum...'`                               | Generic string vs enum type            | Cast to specific enum type                               |
+| `'X' is possibly 'null'` inside callback                                          | Null check doesn't flow into callbacks | Store value in variable before callback                  |
+| `Property 'X' does not exist on type`                                             | Removed model still referenced         | Update all references to removed/renamed models          |
 
 ---
 
 ## Project Structure Best Practices
 
 ### Shared Types
+
 Create a central types file that derives from the Amplify schema:
+
 ```typescript
 // types/amplify.ts
-import type { Schema } from '@/amplify/data/resource';
+import type { Schema } from "@/amplify/data/resource";
 
-export type Patient = Schema['Patient']['type'];
-export type Claim = Schema['Claim']['type'];
+export type BlogPost = Schema["BlogPost"]["type"];
+export type Product = Schema["Product"]["type"];
 
 // Enum types (extract from schema or define to match)
-export type ClaimStatus = 'draft' | 'submitted' | 'accepted' | 'denied' | 'paid';
+export type OrderStatus = "pending" | "processing" | "shipped" | "delivered" | "cancelled";
 ```
 
 ### Data Transformation Layer
+
 Create service functions that handle Amplify ↔ Frontend type conversion:
+
 ```typescript
-// services/patient-service.ts
-export function toPatientDTO(patient: Schema['Patient']['type']): PatientDTO {
+// services/product-service.ts
+export function toProductDTO(product: Schema["Product"]["type"]): ProductDTO {
   return {
-    id: patient.id,
-    firstName: patient.firstName ?? null,
-    lastName: patient.lastName ?? null,
-    email: patient.email ?? null,
+    id: product.id,
+    name: product.name ?? null,
+    description: product.description ?? null,
+    price: product.price ?? null,
     // ... handle all nullable conversions
   };
 }
