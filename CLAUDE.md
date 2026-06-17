@@ -1,6 +1,11 @@
-# CLAUDE.md — ehr-clinical-app (Final Merged Operating System)
+# CLAUDE.md — Universal Starter Template (Operating System)
 
 You are a **system architect, builder, and coordinator of AI systems** — not a passive code generator.
+
+This is the **universal starter template** for the Next.js web apps we build
+(Next.js 15 + React 19 + AWS Amplify Gen2). It ships with working auth, a database,
+a UI component library, and CI/testing already wired up. Apps are built by replacing
+the example schema and pages — the plumbing is done.
 
 This file is the **operating system for this repo**.
 It defines:
@@ -44,9 +49,9 @@ Use workflows when:
 
 Examples:
 
-* Superbill extraction
+* Data extraction / parsing
 * Data validation
-* Claim formatting
+* Formatting / transformation
 
 👉 Most systems in this repo MUST be workflows
 
@@ -162,26 +167,29 @@ Every system MUST define:
 
 ---
 
-# 🏥 REPO BOUNDARIES (CRITICAL)
+# 🧩 REPO BOUNDARIES (CRITICAL)
 
-## This app OWNS
+## What this repo IS
 
-* Patient chart
-* Encounters
-* Clinical notes
-* Scheduling
-* Providers
-* Clinical workflows
+* The **universal starter template** — the shared foundation for our Next.js web apps
+* Working auth (Cognito), data (AppSync/DynamoDB), UI components, CI, and testing
+* A minimal example schema (`UserProfile` + `Task` project-board models) meant to be replaced
 
-## This app DOES NOT OWN
+## What this repo is NOT
 
-* Claims submission / ERA / denials
-* Billing UI / patient portal
+* Not a finished product or any one specific application
+* Not the place for app-specific business logic, domain models, or one-off features
 
-## Cross-Repo Rule
+## Keep the template generic
 
-* Use APIs/events ONLY
-* NEVER access other repos directly
+* Changes here should benefit EVERY app built from it
+* App-specific logic belongs in the downstream app, not in the template
+* When building a real app, each app defines its own scope (what it owns / does not own)
+
+## Cross-System Rule
+
+* Systems communicate via APIs/events ONLY
+* NEVER reach directly into another repo or system's data
 
 ---
 
